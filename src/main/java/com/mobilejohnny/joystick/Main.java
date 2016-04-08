@@ -12,6 +12,11 @@ public class Main extends Base {
     public static void main(String[] args)
     {
         byte[] buffer = new byte[128];
+
+        Thread detectThread = new Thread(new DetectThread());
+
+        detectThread.start();
+
         try {
             while(true)
             {
@@ -28,6 +33,7 @@ public class Main extends Base {
                     else if(str.startsWith("close"))
                     {
                         print("closing \n");
+                        DetectThread.exit();
                         SerialPortUtils.close();
                     }
                     else if(str.startsWith("list"))

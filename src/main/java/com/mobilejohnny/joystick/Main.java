@@ -13,10 +13,8 @@ public class Main extends Base {
     {
         byte[] buffer = new byte[128];
 
-        Thread detectThread = new Thread(new DetectThread());
-
-        detectThread.start();
-
+        int tcpPort = 3840;
+        new Thread(new Network(tcpPort)).start();
         try {
             while(true)
             {
@@ -33,7 +31,7 @@ public class Main extends Base {
                     else if(str.startsWith("close"))
                     {
                         print("closing \n");
-                        DetectThread.exit();
+                        SerialPort.exit();
                         SerialPortUtils.close();
                     }
                     else if(str.startsWith("list"))
@@ -47,7 +45,7 @@ public class Main extends Base {
                     else if(str.startsWith("COM"))
                     {
                         print("connecting "+str+"\n");
-                        SerialPortUtils.connect(str);
+                        SerialPort.connnect(str);
                     }
 
                     print("You enter:"+str+"\n");
@@ -56,7 +54,7 @@ public class Main extends Base {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
 
 

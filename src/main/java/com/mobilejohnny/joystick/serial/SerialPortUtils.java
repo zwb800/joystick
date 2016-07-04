@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.TooManyListenersException;
 
 /** 串口
  * Created by zwb on 2016/4/8.
@@ -16,6 +17,10 @@ public class SerialPortUtils {
     private static OutputStream outputStream;
     private static InputStream inputStream;
     private static SerialPort serialPort;
+
+    public interface DataReadyEventListener{
+        void dataReady(byte[] data,int len);
+    }
 
     public static String[] getPorts()
     {
@@ -30,7 +35,7 @@ public class SerialPortUtils {
 
             }
 
-            System.out.println(port.getName()+" "+port.getCurrentOwner()+" "+port.getPortType());
+            //System.out.println(port.getName()+" "+port.getCurrentOwner()+" "+port.getPortType());
 
             if(port.getPortType() == CommPortIdentifier.PORT_SERIAL)
             {
@@ -41,7 +46,7 @@ public class SerialPortUtils {
         return list.toArray(new String[0]);
     }
 
-    public static boolean connect(String portName)
+    public static boolean connect(String portName,DataReadyEventListener listener)
     {
         boolean result = false;
         try {
@@ -67,8 +72,25 @@ public class SerialPortUtils {
                     serialPort.setSerialPortParams(baudRate,bit,stopBit,parity);
                     inputStream = serialPort.getInputStream();
                     outputStream = serialPort.getOutputStream();
+                    serialPort.notifyOnDataAvailable(true);
+                    serialPort.addEventListener(serialPortEvent -> {
+                        switch (serialPortEvent.getEventType())
+                        {
+                            case SerialPortEvent.DATA_AVAILABLE:
+//                                try {
+                                    byte[] buffer = new byte[1024];
+//                                    while(inputStream.available()>0)
+//                                    {
+//                                        int len = inputStream.read(buffer);
+//                                        listener.dataReady(buffer,len);
+//                                    }
+//                                } catch (IOException e) {
+//                                    e.printStackTrace();
+//                                }
+                                break;
+                        }
+                    });
                     result = true;
-
                 }
                 else
                 {
@@ -84,6 +106,8 @@ public class SerialPortUtils {
             System.out.println("Error:Wrong port settings");
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (TooManyListenersException e) {
+            e.printStackTrace();
         }
 
         return result;
@@ -94,10 +118,6 @@ public class SerialPortUtils {
         if(serialPort!=null) {
             serialPort.close();
         }
-    }
-
-    public static InputStream getInputStream() {
-        return inputStream;
     }
 
     public static OutputStream getOutputStream() {

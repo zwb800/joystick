@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 /**
  * 网络
@@ -16,14 +17,14 @@ public class Network implements Runnable {
 
     private int port;
     private Socket connection;
-    private boolean exit = false;
+    private static boolean exit = false;
 
     public Network(int port)
     {
         this.port = port;
     }
 
-    public void exit()
+    public static void exit()
     {
         exit = true;
     }
@@ -37,48 +38,20 @@ public class Network implements Runnable {
     public void run()  {
         try {
                 ServerSocket socket = new ServerSocket(port);
+                socket.setSoTimeout(3000);
 
                 while(!exit)
                 {
-                    connection = socket.accept();
-                    outputStream = connection.getOutputStream();
+                    try{
+                        connection = socket.accept();
+                        outputStream = connection.getOutputStream();
 
-                    new Thread(() -> {
-                        byte[] buffer= new byte[1024];
-                        try {
-                            InputStream inputStream = connection.getInputStream();
+                        new Thread(tcp2uart).start();
 
-                            while(true)
-                            {
-                                if(inputStream.available()>0)
-                                {
-                                    int len = inputStream.read(buffer);
-
-                                    OutputStream outputStream = SerialPortUtils.getOutputStream();
-
-                                    if(outputStream!=null)
-                                    {
-                                        try {
-                                            outputStream.write(buffer,0,len);
-                                        }catch (IOException ex)
-                                        {
-                                            System.out.println("serial write error");
-//                                            SerialPort.reconnect();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        System.out.println("serial port not found");
-//                                        SerialPort.reconnect();
-                                    }
-
-                                }
-                            }
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }).start();
+                    }catch (SocketTimeoutException ex)
+                    {
+                        //System.out.println("accept超时");
+                    }
                 }
 
                 socket.close();
@@ -88,4 +61,42 @@ public class Network implements Runnable {
             e.printStackTrace();
         }
     }
+
+    private Runnable tcp2uart = () -> {
+        byte[] buffer= new byte[1024];
+
+        try {
+            InputStream inputStream = connection.getInputStream();
+
+            while(!exit)
+            {
+                if(inputStream.available()>0)
+                {
+                    int len = inputStream.read(buffer);
+
+                    OutputStream outputStream = SerialPortUtils.getOutputStream();
+
+                    if(outputStream!=null)
+                    {
+                        try {
+                            outputStream.write(buffer,0,len);
+                        }catch (IOException ex)
+                        {
+                            System.out.println("serial write error");
+                            SerialPort.reconnect();
+                        }
+                    }
+                    else
+                    {
+                        System.out.println("serial port not found");
+                        SerialPort.reconnect();
+                    }
+
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    };
 }

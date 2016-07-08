@@ -10,7 +10,7 @@ import java.io.OutputStream;
  */
 public class SerialPort implements Runnable {
 
-    private static boolean exit = false;
+    private static boolean exit = true;
 
 
     public static void exit()
@@ -29,16 +29,19 @@ public class SerialPort implements Runnable {
 
     public static void reconnect()
     {
-        new Thread(new SerialPort()).start();
+        SerialPortUtils.close();
+        if(exit && port!=null)//没有正在连接 开始新的连接
+        {
+            new Thread(new SerialPort()).start();
+        }
     }
 
     public static void disconnect()
     {
-        connnect(null);
         SerialPortUtils.close();
     }
 
-    private SerialPortUtils.DataReadyEventListener dataReadyListener = (data, len) -> {
+    private SerialPortUtils.DataReadyEventListener uart2tcp = (data, len) -> {
         OutputStream outputStream = Network.getOutputStream();
         if(outputStream!=null)
         {
@@ -65,7 +68,7 @@ public class SerialPort implements Runnable {
                 for (int i = 0; i < ports.length; i++) {
                     if(ports[i].equals(port))
                     {
-                        if(SerialPortUtils.connect(port,dataReadyListener))
+                        if(SerialPortUtils.connect(port,uart2tcp))
                         {
                             System.out.println("已连接端口 "+port);
                             exit = true;

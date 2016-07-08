@@ -77,16 +77,17 @@ public class SerialPortUtils {
                         switch (serialPortEvent.getEventType())
                         {
                             case SerialPortEvent.DATA_AVAILABLE:
-//                                try {
+                                try {
                                     byte[] buffer = new byte[1024];
-//                                    while(inputStream.available()>0)
-//                                    {
-//                                        int len = inputStream.read(buffer);
-//                                        listener.dataReady(buffer,len);
-//                                    }
-//                                } catch (IOException e) {
-//                                    e.printStackTrace();
-//                                }
+                                    while(inputStream.available()>0)
+                                    {
+                                        int len = inputStream.read(buffer);
+                                        listener.dataReady(buffer,len);
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    close();
+                                }
                                 break;
                         }
                     });
@@ -105,7 +106,7 @@ public class SerialPortUtils {
         } catch (UnsupportedCommOperationException e) {
             System.out.println("Error:Wrong port settings");
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         } catch (TooManyListenersException e) {
             e.printStackTrace();
         }
